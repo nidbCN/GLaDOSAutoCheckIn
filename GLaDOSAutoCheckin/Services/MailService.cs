@@ -10,12 +10,13 @@ namespace GLaDOSAutoCheckin.Services
     public class MailService
     {
         private readonly AuthOption _option;
-        private readonly ILogger<MailService> _logger;
 
         private readonly ImapClient _mailClient = new();
         private readonly IMailFolder? _mailFolder;
 
-        public MailService(AuthOption option, ILogger<MailService> logger, ILookupClient lookupClient)
+        private readonly ILogger<MailService> _logger;
+
+        public MailService(AuthOption option, ILookupClient lookupClient, ILogger<MailService> logger)
         {
             if (option.MailHost is null)
             {
@@ -27,7 +28,6 @@ namespace GLaDOSAutoCheckin.Services
 
             _option = option;
             _logger = logger;
-
         }
 
         public void Initlaze()

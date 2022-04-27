@@ -7,8 +7,6 @@ public class AuthOption
 
     public string Password { get; set; }
 
-    public string BaseUrl { get; set; } = "https://glados.rocks/api/";
-
     public ushort MailPort { get; set; } = 143;
 #nullable restore
 
