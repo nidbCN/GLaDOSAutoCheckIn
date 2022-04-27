@@ -5,73 +5,72 @@ using MailKit.Net.Imap;
 using Microsoft.Extensions.Logging;
 using MimeKit;
 
-namespace GLaDOSAutoCheckin.Services
+namespace GLaDOSAutoCheckin.Services;
+
+public class MailService : IMailService
 {
-    public class MailService
+    private readonly AuthOption _option;
+
+    private readonly ImapClient _mailClient = new();
+    private readonly IMailFolder? _mailFolder;
+
+    private readonly ILogger<MailService> _logger;
+
+    public MailService(AuthOption option, ILookupClient lookupClient, ILogger<MailService> logger)
     {
-        private readonly AuthOption _option;
-
-        private readonly ImapClient _mailClient = new();
-        private readonly IMailFolder? _mailFolder;
-
-        private readonly ILogger<MailService> _logger;
-
-        public MailService(AuthOption option, ILookupClient lookupClient, ILogger<MailService> logger)
+        if (option.MailHost is null)
         {
-            if (option.MailHost is null)
-            {
-                var mailHost = lookupClient
-                    .Query(option.MailAccount[(option.MailAccount.IndexOf('@') + 1)..], QueryType.MX)
-                    .Answers.MxRecords().First().Exchange.Value;
-                option.MailHost = mailHost;
-            }
-
-            _option = option;
-            _logger = logger;
+            var mailHost = lookupClient
+                .Query(option.MailAccount[(option.MailAccount.IndexOf('@') + 1)..], QueryType.MX)
+                .Answers.MxRecords().First().Exchange.Value;
+            option.MailHost = mailHost;
         }
 
-        public void Initlaze()
-        {
-                       _mailClient.Connect(
-                _option.MailHost,
-                _option.MailPort,
-                MailKit.Security.SecureSocketOptions.None
-            );
+        _option = option;
+        _logger = logger;
+    }
 
-            _logger.LogDebug("connected to mail: {mail}", _option.MailAccount);
+    public void Initlaze()
+    {
+        _mailClient.Connect(
+            _option.MailHost,
+            _option.MailPort,
+            MailKit.Security.SecureSocketOptions.None
+        );
 
-            _mailClient.Authenticate(_option.MailAccount, _option.Password);
-            _mailClient.Inbox.Open(FolderAccess.ReadOnly);
+        _logger.LogDebug("connected to mail: {mail}", _option.MailAccount);
 
-            _logger.LogDebug("open inbox with {num} recent", _mailClient.Inbox.Recent);
-        }
+        _mailClient.Authenticate(_option.MailAccount, _option.Password);
+        _mailClient.Inbox.Open(FolderAccess.ReadOnly);
 
-        public bool TryGetAuthMail(out MimeMessage? mailObj)
-        {
-            if (_mailFolder is null)
-                throw new NullReferenceException(nameof(_mailFolder));
+        _logger.LogDebug("open inbox with {num} recent", _mailClient.Inbox.Recent);
+    }
 
-            mailObj = _mailFolder.LastOrDefault(
-                mail => mail.Subject == "GLaDOS Authentication");
+    public bool TryGetAuthMail(out MimeMessage? mailObj)
+    {
+        if (_mailFolder is null)
+            throw new NullReferenceException(nameof(_mailFolder));
 
-            if (mailObj is null)
-                return false;
+        mailObj = _mailFolder.LastOrDefault(
+            mail => mail.Subject == "GLaDOS Authentication");
 
-            return true;
-        }
+        if (mailObj is null)
+            return false;
 
-        public bool TryGetAuthMail(Predicate<MimeMessage> match, out MimeMessage? mailObj)
-        {
-            if (_mailFolder is null)
-                throw new NullReferenceException(nameof(_mailFolder));
+        return true;
+    }
 
-            mailObj = _mailFolder.LastOrDefault(
-                mail => match.Invoke(mail));
+    public bool TryGetAuthMail(Predicate<MimeMessage> match, out MimeMessage? mailObj)
+    {
+        if (_mailFolder is null)
+            throw new NullReferenceException(nameof(_mailFolder));
 
-            if (mailObj is null)
-                return false;
+        mailObj = _mailFolder.LastOrDefault(
+            mail => match.Invoke(mail));
 
-            return true;
-        }
+        if (mailObj is null)
+            return false;
+
+        return true;
     }
 }

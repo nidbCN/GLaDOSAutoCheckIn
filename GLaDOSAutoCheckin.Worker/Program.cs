@@ -5,7 +5,8 @@ IHost host = Host.CreateDefaultBuilder(args)
     .ConfigureServices((context, services) =>
     {
         var baseUrl = context.Configuration["HttpOption:BaseUrl"] ?? "https://glados.rocks/api";
-        services.AddHttpClient<AuthService>(client =>
+        
+        services.AddHttpClient<IAuthService, AuthService>(client =>
         {
             client.BaseAddress = new Uri(baseUrl);
 
@@ -25,6 +26,7 @@ IHost host = Host.CreateDefaultBuilder(args)
                 UseCookies = true
             });
 
+        services.AddScoped<IMailService, MailService>();
         services.AddHostedService<Worker>();
     })
     .Build();
