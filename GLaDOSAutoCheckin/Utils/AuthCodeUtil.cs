@@ -2,7 +2,7 @@
 
 public static class AuthCodeUtil
 {
-    public static bool TryGetAuthCodeFromHtml(string html, out string code)
+    public static bool TryParseFromHtml(string html, out string code)
     {
         code = string.Empty;
 
