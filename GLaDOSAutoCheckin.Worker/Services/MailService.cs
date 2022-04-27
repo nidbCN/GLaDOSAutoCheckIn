@@ -2,11 +2,10 @@
 using GLaDOSAutoCheckin.Models;
 using MailKit;
 using MailKit.Net.Imap;
-using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using MimeKit;
 
-namespace GLaDOSAutoCheckin.Services;
+namespace GLaDOSAutoCheckin.Worker.Services;
 
 public class MailService : IMailService
 {

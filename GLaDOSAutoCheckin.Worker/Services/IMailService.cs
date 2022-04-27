@@ -1,6 +1,6 @@
 ﻿using MimeKit;
 
-namespace GLaDOSAutoCheckin.Services;
+namespace GLaDOSAutoCheckin.Worker.Services;
 
 public interface IMailService
 {

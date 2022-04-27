@@ -1,4 +1,4 @@
-﻿namespace GLaDOSAutoCheckin.Services;
+﻿namespace GLaDOSAutoCheckin.Worker.Services;
 
 public interface IUserConsoleService
 {

@@ -1,10 +1,9 @@
 ﻿using GLaDOSAutoCheckin.Models;
-using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using System.Net.Http.Json;
 using System.Text.Json;
 
-namespace GLaDOSAutoCheckin.Services;
+namespace GLaDOSAutoCheckin.Worker.Services;
 
 public class UserConsoleService : IUserConsoleService
 {

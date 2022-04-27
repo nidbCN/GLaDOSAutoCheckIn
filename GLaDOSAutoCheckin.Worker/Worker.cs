@@ -1,4 +1,4 @@
-using GLaDOSAutoCheckin.Services;
+using GLaDOSAutoCheckin.Worker.Services;
 using GLaDOSAutoCheckin.Utils;
 
 namespace GLaDOSAutoCheckin.Worker;

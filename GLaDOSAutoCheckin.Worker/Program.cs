@@ -1,7 +1,7 @@
 using DnsClient;
 using GLaDOSAutoCheckin.Models;
-using GLaDOSAutoCheckin.Services;
 using GLaDOSAutoCheckin.Worker;
+using GLaDOSAutoCheckin.Worker.Services;
 
 IHost host = Host.CreateDefaultBuilder(args)
     .ConfigureServices((context, services) =>
