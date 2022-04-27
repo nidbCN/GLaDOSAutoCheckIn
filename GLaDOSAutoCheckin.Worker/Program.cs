@@ -4,6 +4,8 @@ using GLaDOSAutoCheckIn.Worker;
 using GLaDOSAutoCheckIn.Worker.Services;
 
 IHost host = Host.CreateDefaultBuilder(args)
+    .UseSystemd()
+    .UseWindowsService()
     .ConfigureServices((context, services) =>
     {
         // Configure option
