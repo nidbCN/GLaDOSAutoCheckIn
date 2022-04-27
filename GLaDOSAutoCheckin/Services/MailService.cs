@@ -2,69 +2,76 @@
 using GLaDOSAutoCheckin.Models;
 using MailKit;
 using MailKit.Net.Imap;
-using GLaDOSAutoCheckin.Utils;
+using Microsoft.Extensions.Logging;
+using MimeKit;
 
 namespace GLaDOSAutoCheckin.Services
 {
     public class MailService
     {
-        private readonly ILookupClient _lookupClient;
         private readonly AuthOption _option;
+        private readonly ILogger<MailService> _logger;
 
-        public MailService(ILookupClient lookupClient, AuthOption option)
+        private readonly ImapClient _mailClient = new();
+        private readonly IMailFolder? _mailFolder;
+
+        public MailService(AuthOption option, ILogger<MailService> logger, ILookupClient lookupClient)
         {
-            _lookupClient = lookupClient;
-            _option = option;
-
-            if (_option.MailHost is null)
+            if (option.MailHost is null)
             {
-                var mailHost = _lookupClient
-                    .Query(_option.MailAccount[(_option.MailAccount.IndexOf('@') + 1)..], QueryType.MX)
+                var mailHost = lookupClient
+                    .Query(option.MailAccount[(option.MailAccount.IndexOf('@') + 1)..], QueryType.MX)
                     .Answers.MxRecords().First().Exchange.Value;
-                _option.MailHost = mailHost;
+                option.MailHost = mailHost;
             }
+
+            _option = option;
+            _logger = logger;
+
         }
 
-        public string GetAuthCode()
+        public void Initlaze()
         {
-            var startTime = DateTime.Now;
+                       _mailClient.Connect(
+                _option.MailHost,
+                _option.MailPort,
+                MailKit.Security.SecureSocketOptions.None
+            );
 
-            using var client = new ImapClient();
-            client.Connect(_option.MailHost, _option.MailPort, MailKit.Security.SecureSocketOptions.None);
+            _logger.LogDebug("connected to mail: {mail}", _option.MailAccount);
 
-            client.Authenticate(_option.MailAccount, _option.Password);
+            _mailClient.Authenticate(_option.MailAccount, _option.Password);
+            _mailClient.Inbox.Open(FolderAccess.ReadOnly);
 
-            // The Inbox folder is always available on all IMAP servers...
-            var inbox = client.Inbox;
-            string? code = null;
+            _logger.LogDebug("open inbox with {num} recent", _mailClient.Inbox.Recent);
+        }
 
-            do
-            {
-                inbox.Open(FolderAccess.ReadWrite);
+        public bool TryGetAuthMail(out MimeMessage? mailObj)
+        {
+            if (_mailFolder is null)
+                throw new NullReferenceException(nameof(_mailFolder));
 
-                Console.WriteLine("Total messages: {0}", inbox.Count);
-                Console.WriteLine("Recent messages: {0}", inbox.Recent);
+            mailObj = _mailFolder.LastOrDefault(
+                mail => mail.Subject == "GLaDOS Authentication");
 
-                var authMail = inbox.Last(mail => mail.Subject == "GLaDOS Authentication");
+            if (mailObj is null)
+                return false;
 
-                if (authMail is null)
-                {
-                    Console.WriteLine("Mail not fount, retry...");
-                    break;
-                }
+            return true;
+        }
 
-                // if (authMail.Date.DateTime < startTime) break;
+        public bool TryGetAuthMail(Predicate<MimeMessage> match, out MimeMessage? mailObj)
+        {
+            if (_mailFolder is null)
+                throw new NullReferenceException(nameof(_mailFolder));
 
-                if (AuthCodeUtil.TryGetAuthCodeFromHtml(authMail.HtmlBody, out code))
-                {
-                    Console.WriteLine($"Auth code is {code}");
-                }
+            mailObj = _mailFolder.LastOrDefault(
+                mail => match.Invoke(mail));
 
-            } while (code is null);
+            if (mailObj is null)
+                return false;
 
-            client.Disconnect(true);
-
-            return code;
+            return true;
         }
     }
 }
