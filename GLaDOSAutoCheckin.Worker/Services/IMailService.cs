@@ -1,12 +1,10 @@
 ﻿using MimeKit;
 
-namespace GLaDOSAutoCheckin.Worker.Services;
+namespace GLaDOSAutoCheckIn.Worker.Services;
 
 public interface IMailService
 {
-    public void Initlaze();
+    public void Initialize();
 
-    public bool TryGetAuthMail(out MimeMessage? mailObj);
-
-    public bool TryGetAuthMail(Predicate<MimeMessage> match, out MimeMessage? mailObj);
+    public bool TryGetAuthMail(out MimeMessage mailObj);
 }

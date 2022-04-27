@@ -1,7 +1,7 @@
-using GLaDOSAutoCheckin.Worker.Services;
-using GLaDOSAutoCheckin.Utils;
+using GLaDOSAutoCheckIn.Utils;
+using GLaDOSAutoCheckIn.Worker.Services;
 
-namespace GLaDOSAutoCheckin.Worker;
+namespace GLaDOSAutoCheckIn.Worker;
 
 public class Worker : BackgroundService
 {
@@ -14,30 +14,30 @@ public class Worker : BackgroundService
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        _userService.SendVerifyAsync().Wait();
+        await _userService.RequireVerifyAsync();
 
-        Thread.Sleep(3000);
-
-        _mailService.Initlaze();
-        _mailService.TryGetAuthMail(out var mail);
-
-        var code = mail?.HtmlBody;
-
-        Console.WriteLine(code);
-
-        if (code is not null)
+        for (var i = 0; i < 3; i++)
         {
-            if (AuthCodeUtil.TryParseFromHtml(code, out var c))
+            _logger.LogInformation("Try get auth from mail, times {times}", i);
+            if (_mailService.TryGetAuthMail(out var mail))
             {
-               await _userService.LoginAsync(c);
-                await _userService.GetStatus();
+                if (!AuthCodeUtil.TryParseFromHtml(mail.HtmlBody, out var code))
+                {
+                    _logger.LogError("An error occurred while parse code from mail, exit.");
+                    return;
+                }
+
+                _logger.LogInformation("Successful read code {sCode}", $"****{code[^2..]}");
+                await _userService.LoginAsync(code);
+                await _userService.CheckIn();
+            }
+            else
+            {
+                _logger.LogWarning("Could not found auth mail, retry in 5s.");
+                Thread.Sleep(5000);
             }
         }
 
-        while (!stoppingToken.IsCancellationRequested)
-        {
-            _logger.LogInformation("Worker running at: {time}", DateTimeOffset.Now);
-            await Task.Delay(1000, stoppingToken);
-        }
+        _logger.LogError("Could not found auth mail after 3 times fetch, exit.");
     }
 }

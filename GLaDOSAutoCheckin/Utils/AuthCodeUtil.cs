@@ -1,4 +1,5 @@
-﻿namespace GLaDOSAutoCheckin.Utils;
+﻿// ReSharper disable StringIndexOfIsCultureSpecific.1
+namespace GLaDOSAutoCheckIn.Utils;
 
 public static class AuthCodeUtil
 {

@@ -1,4 +1,4 @@
-﻿namespace GLaDOSAutoCheckin.Models;
+﻿namespace GLaDOSAutoCheckIn.Models;
 
 public class AuthOption
 {

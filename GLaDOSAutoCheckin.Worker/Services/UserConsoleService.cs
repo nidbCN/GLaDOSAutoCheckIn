@@ -1,9 +1,10 @@
-﻿using GLaDOSAutoCheckin.Models;
-using Microsoft.Extensions.Options;
+﻿using Microsoft.Extensions.Options;
 using System.Net.Http.Json;
 using System.Text.Json;
+using GLaDOSAutoCheckIn.Models;
+using GLaDOSAutoCheckIn.Models.ResponseModels;
 
-namespace GLaDOSAutoCheckin.Worker.Services;
+namespace GLaDOSAutoCheckIn.Worker.Services;
 
 public class UserConsoleService : IUserConsoleService
 {
@@ -16,7 +17,7 @@ public class UserConsoleService : IUserConsoleService
         _option = option.Value;
         (_httpClient, _logger) = (httpClient, logger);
     }
-    public async Task SendVerifyAsync()
+    public async Task RequireVerifyAsync()
     {
         var resp = await _httpClient.PostAsync("authorization",
               JsonContent.Create(new
@@ -40,20 +41,41 @@ public class UserConsoleService : IUserConsoleService
                }));
 
         resp.EnsureSuccessStatusCode();
+        _logger.LogInformation("Login success, {msg}", await resp.Content.ReadAsStringAsync());
     }
 
-    public Task CheckIn()
+    public async Task CheckIn()
     {
-        throw new NotImplementedException();
-    }
-
-    public async Task GetStatus()
-    {
-        var resp = await _httpClient.GetAsync("user/status");
+        var resp = await _httpClient.PostAsync("user/checkin",
+            JsonContent.Create(new
+            {
+                token = "glados_network"
+            }));
 
         resp.EnsureSuccessStatusCode();
 
-        _logger.LogInformation("User status: {s}", JsonSerializer.Serialize(
-            resp.Content.ReadAsStringAsync().Result));
+        var result = JsonSerializer.Deserialize<CheckInResponse>(
+            await resp.Content.ReadAsStringAsync());
+
+        if (result is null || result.Code != 0)
+        {
+            // failed
+            _logger.LogError("Error occurred during check-in, message {msg}", result?.Message);
+            return;
+        }
+
+        _logger.LogInformation("CheckIn success, message {msg}", result.Message);
+    }
+
+    public Task GetStatus()
+    {
+        throw new NotImplementedException();
+
+        //var resp = await _httpClient.GetAsync("user/status");
+
+        //resp.EnsureSuccessStatusCode();
+
+        //_logger.LogInformation("User status: {s}",
+        //    resp.Content.ReadAsStringAsync().Result);
     }
 }

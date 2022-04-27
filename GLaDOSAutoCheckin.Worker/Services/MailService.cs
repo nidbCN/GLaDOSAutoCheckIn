@@ -1,80 +1,68 @@
 ﻿using DnsClient;
-using GLaDOSAutoCheckin.Models;
-using MailKit;
-using MailKit.Net.Imap;
+using GLaDOSAutoCheckIn.Models;
+using MailKit.Net.Pop3;
 using Microsoft.Extensions.Options;
 using MimeKit;
 
-namespace GLaDOSAutoCheckin.Worker.Services;
+namespace GLaDOSAutoCheckIn.Worker.Services;
 
 public class MailService : IMailService
 {
     private readonly AuthOption _option;
 
-    private readonly ImapClient _mailClient = new();
+    private readonly Pop3Client _mailClient = new();
 
     private readonly ILogger<MailService> _logger;
 
     public MailService(IOptions<AuthOption> option, ILookupClient lookupClient, ILogger<MailService> logger)
     {
-        var authOption = option.Value;
+        _logger = logger;
 
-        
+        var authOption = option.Value;
 
         if (authOption.MailHost is null)
         {
+            _logger.LogInformation("Could not get mail host, trying resolve {account}", authOption.MailAccount);
             var mailHost = lookupClient
                 .Query(authOption.MailAccount[(authOption.MailAccount.IndexOf('@') + 1)..], QueryType.MX)
                 .Answers.MxRecords().First().Exchange.Value;
-
+            _logger.LogInformation("Find mx record {rec} for this account.", mailHost);
             authOption.MailHost = mailHost;
         }
 
         _option = authOption;
-        _logger = logger;
     }
 
-    public void Initlaze()
+    public void Initialize()
     {
+        _logger.LogInformation("Connecting to mail host.");
         _mailClient.Connect(
             _option.MailHost,
             _option.MailPort,
             MailKit.Security.SecureSocketOptions.None
         );
 
-        _logger.LogDebug("connected to mail: {mail}", _option.MailAccount);
-
         _mailClient.Authenticate(_option.MailAccount, _option.Password);
-        _mailClient.Inbox.Open(FolderAccess.ReadOnly);
-
-        _logger.LogDebug("open inbox with {num} recent", _mailClient.Inbox.Recent);
     }
 
-    public bool TryGetAuthMail(out MimeMessage? mailObj)
+    public bool TryGetAuthMail(out MimeMessage mailObj)
     {
-        if (_mailClient.Inbox is null)
-            throw new NullReferenceException(nameof(_mailClient.Inbox));
+        mailObj = new();
 
-        mailObj = _mailClient.Inbox.LastOrDefault(
-            mail => mail.Subject == "GLaDOS Authentication");
-
-        if (mailObj is null)
+        if (_mailClient.Count == 0)
             return false;
 
-        return true;
-    }
+        for (var i = _mailClient.Count - 1; i >= 0; i--)
+        {
+            var mailItem = _mailClient.GetMessage(i);
 
-    public bool TryGetAuthMail(Predicate<MimeMessage> match, out MimeMessage? mailObj)
-    {
-        if (_mailClient.Inbox is null)
-            throw new NullReferenceException(nameof(_mailClient.Inbox));
+            if (mailItem?.Subject != "GLaDOS Authentication") continue;
 
-        mailObj = _mailClient.Inbox.LastOrDefault(
-            mail => match.Invoke(mail));
+            _logger.LogInformation("Found auth mail, subject {title}", mailItem.Subject);
+            mailObj = mailItem;
+            return true;
+        }
 
-        if (mailObj is null)
-            return false;
-
-        return true;
+        return false;
     }
 }
