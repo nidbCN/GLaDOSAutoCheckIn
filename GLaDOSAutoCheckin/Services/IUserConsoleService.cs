@@ -1,14 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿namespace GLaDOSAutoCheckin.Services;
 
-namespace GLaDOSAutoCheckin.Services
+public interface IUserConsoleService
 {
-    public interface IUserConsoleService
-    {
-        public Task CheckIn();
-        public Task Status();
-    }
+    public Task SendVerifyAsync();
+    public Task LoginAsync(string code);
+    public Task CheckIn();
+    public Task GetStatus();
 }

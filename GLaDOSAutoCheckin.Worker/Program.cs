@@ -1,12 +1,19 @@
+using DnsClient;
+using GLaDOSAutoCheckin.Models;
 using GLaDOSAutoCheckin.Services;
 using GLaDOSAutoCheckin.Worker;
 
 IHost host = Host.CreateDefaultBuilder(args)
     .ConfigureServices((context, services) =>
     {
+        services.Configure<AuthOption>(
+            context.Configuration.GetSection(nameof(AuthOption))
+        );
+        services.AddSingleton<ILookupClient>(new LookupClient());
+
         var baseUrl = context.Configuration["HttpOption:BaseUrl"] ?? "https://glados.rocks/api";
-        
-        services.AddHttpClient<IAuthService, AuthService>(client =>
+
+        services.AddHttpClient<IUserConsoleService, UserConsoleService>(client =>
         {
             client.BaseAddress = new Uri(baseUrl);
 
@@ -26,7 +33,7 @@ IHost host = Host.CreateDefaultBuilder(args)
                 UseCookies = true
             });
 
-        services.AddScoped<IMailService, MailService>();
+        services.AddSingleton<IMailService, MailService>();
         services.AddHostedService<Worker>();
     })
     .Build();
