@@ -1,37 +1,41 @@
 using DnsClient;
 using GLaDOSAutoCheckIn.Models;
+using GLaDOSAutoCheckIn.Models.Options;
 using GLaDOSAutoCheckIn.Worker;
 using GLaDOSAutoCheckIn.Worker.Services;
 
-IHost host = Host.CreateDefaultBuilder(args)
-    .UseSystemd()
-    .UseWindowsService()
-    .ConfigureServices((context, services) =>
-    {
+await Host.CreateDefaultBuilder(args)
+   .UseSystemd()
+   .UseWindowsService()
+   .ConfigureServices((context, services) =>
+   {
         // Configure option
         services.Configure<AuthOption>(
-            context.Configuration.GetSection(nameof(AuthOption))
-        );
+           context.Configuration.GetSection(nameof(AuthOption))
+       );
 
         // Add DNS lookup client
         services.AddSingleton<ILookupClient>(new LookupClient());
 
-        var baseUrl = context.Configuration["HttpOption:BaseUrl"] ?? "https://glados.rocks/api";
-
         // Add user service with configured HttpClient
         services.AddHttpClient<IUserConsoleService, UserConsoleService>(client =>
         {
-            client.BaseAddress = new Uri(baseUrl);
+            var requestOption = context.Configuration
+                .GetSection(nameof(RequestOption))
+                .Get<RequestOption>();
 
-            client.DefaultRequestHeaders
-                .UserAgent.ParseAdd(context.Configuration["HttpOption:UserAgent"]);
-            client.DefaultRequestHeaders.Add("authority", "glados.rocks");
+           client.BaseAddress = new Uri(requestOption.BaseUrl);
+           client.Timeout = TimeSpan.FromMilliseconds(requestOption.TimeOut);
 
-            var cookie = context.Configuration["HttpOption:Cookie"];
-            if (cookie != null)
-            {
-                client.DefaultRequestHeaders.Add("cookie", cookie);
-            }
+           client.DefaultRequestHeaders
+               .UserAgent.ParseAdd(requestOption.UserAgent);
+           client.DefaultRequestHeaders
+               .Add("authority", "glados.rocks");
+
+           if (requestOption.Cookie != null)
+           {
+               client.DefaultRequestHeaders.Add("cookie", requestOption.Cookie);
+           }
         }).ConfigurePrimaryHttpMessageHandler(() =>
             new HttpClientHandler()
             {
@@ -42,7 +46,5 @@ IHost host = Host.CreateDefaultBuilder(args)
         services.AddSingleton<IMailService, MailService>();
 
         services.AddHostedService<Worker>();
-    })
-    .Build();
-
-await host.RunAsync();
+   })
+   .Build().RunAsync();
