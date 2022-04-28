@@ -71,11 +71,78 @@ dotnet publish -c Release
 
 #### Systemd daemon
 
+将构建的文件置于 `/opt/GLaDOSAutoCheckIn` 目录下。
 
+创建 `GLaDOSCheck.service` ，写入以下内容：
+
+```service
+[Unit]
+Description=GLaDOS Auto check-in
+Documentation=https://github.com/nidbCN/GLaDOSAutoCheckIn
+Requires=network.target
+
+[Service]
+Type=notify
+ExecStart=/opt/GLaDOSAuthCheckIn/GLaDOSAuthCheckIn
+```
+
+将该文件复制到 `/etc/systemd/system/` 目录下，执行
+
+```sh
+sudo systemctl daemon-reload
+```
+
+使用 
+
+```sh
+systemctl start GLaDOSCheck.service
+```
+
+完成单次签到
+
+##### 添加定时器
+
+新建 `GLaDOSAuto.timer` 写入以下内容：
+
+```service
+[Unit]
+Description=GLaDOS auto check-in timer
+
+[Timer]
+OnUnitActiveSec=24h
+Unit=GLaDOSCheck.service
+
+[Install]
+WantedBy=multi-user.target
+```
+
+将该文件复制到 `/etc/systemd/system/` 目录下，执行
+
+```sh
+sudo systemctl daemon-reload
+```
+
+使用 
+
+```sh
+systemctl enable GLaDOSAuto.timer
+```
+
+开机自动启动定时器
+
+使用
+
+```sh
+systemctl start GLaDOSAuto.timer
+```
+
+启动定时器
 
 ## TODOs
 
-1. 存储cookie
+1. 测试自动解析POP服务器
+2. 存储cookie
+3. 视情况看是否内置定时器，而整个程序作为一个常驻的daeom运行
 
 ## License
 
