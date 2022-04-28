@@ -1,5 +1,4 @@
 using DnsClient;
-using GLaDOSAutoCheckIn.Models;
 using GLaDOSAutoCheckIn.Models.Options;
 using GLaDOSAutoCheckIn.Worker;
 using GLaDOSAutoCheckIn.Worker.Services;
