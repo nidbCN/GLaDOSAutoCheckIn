@@ -1,6 +1,7 @@
 ﻿using DnsClient;
 using GLaDOSAutoCheckIn.Models.Options;
 using MailKit.Net.Pop3;
+using MailKit.Security;
 using Microsoft.Extensions.Options;
 using MimeKit;
 
@@ -39,7 +40,9 @@ public class MailService : IMailService
         _mailClient.Connect(
             _option.MailHost,
             _option.MailPort,
-            MailKit.Security.SecureSocketOptions.None
+            _option.UseSSL
+                ? SecureSocketOptions.SslOnConnect 
+                : SecureSocketOptions.None
         );
 
         _mailClient.Authenticate(_option.MailAccount, _option.Password);
@@ -47,7 +50,7 @@ public class MailService : IMailService
 
     public bool TryGetAuthMail(out MimeMessage mailObj)
     {
-        mailObj = new();
+        mailObj = new MimeMessage();
 
         if (_mailClient.Count == 0)
             return false;
