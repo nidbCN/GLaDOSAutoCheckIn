@@ -1,5 +1,6 @@
 ﻿using DnsClient;
 using GLaDOSAutoCheckIn.Models;
+using GLaDOSAutoCheckIn.Models.Options;
 using MailKit.Net.Pop3;
 using Microsoft.Extensions.Options;
 using MimeKit;

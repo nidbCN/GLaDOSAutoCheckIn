@@ -2,6 +2,7 @@
 using System.Net.Http.Json;
 using System.Text.Json;
 using GLaDOSAutoCheckIn.Models;
+using GLaDOSAutoCheckIn.Models.Options;
 using GLaDOSAutoCheckIn.Models.ResponseModels;
 
 namespace GLaDOSAutoCheckIn.Worker.Services;
