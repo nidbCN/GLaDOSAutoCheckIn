@@ -29,7 +29,19 @@ public class Worker : BackgroundService
 
                 _logger.LogInformation("Successful read code {sCode}", $"****{code[^2..]}");
                 await _userService.LoginAsync(code);
+
+                var startTime = DateTime.Now;
                 await _userService.CheckIn();
+
+                while (!stoppingToken.IsCancellationRequested)
+                {
+
+                    if (DateTime.Now.Day - startTime.Day >= 1)
+                    {
+                        await _userService.CheckIn();
+                    }
+                    Thread.Sleep(100);
+                }
             }
             else
             {
