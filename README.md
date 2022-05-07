@@ -33,6 +33,8 @@ dotnet publish -c Release
 
 ### 配置
 
+#### 配置文件
+
 打开编译完成的目录（默认为 `GLaDOSAutoCheckin.Worker\bin\Release\net6.0\publish`）中的 `appsettings.json` （没有则新建）
 
 写入或修改以下内容：
@@ -65,6 +67,16 @@ dotnet publish -c Release
 2. `AuthOption` 为收邮件和登录的配置，`MailAccount` 为登录所用的邮箱；`Password` 为邮箱的密码（用于拉取邮件获取验证码）；`MailPort` 为 POP3 的端口，默认为 `143`，如果需要使用 SSL（见下文）请修改为对应端口（协议默认端口为 `995`）；`MailHost` 为邮件服务器，为空则自动解析；`UseSSL` 设置为 `true` 则使用 SSL 登录，需要手动指定端口为 `995`。
 3. `HttpOption` 节点为发送请求的配置，`UserAgent` 为用户UA，建议模仿浏览器；`BaseUrl` 是 GLaDOS 的 API 链接；`Cookie` 暂时无法设置。
  
+#### 命令行参数
+
+```sh
+./GLaDOSAutoCheckIn.Worker --AuthOption:MailAccount mail@example.com
+```
+
+参考 配置文件 章节的节点配置
+
+> 建议，使用配置文件配置 `RequestOption` ，命令行配置邮箱密码等
+
 ### 使用
 
 配置完成后，运行 GLaDOSAutoCheckIn 则会自动完成验证、登录和签到
