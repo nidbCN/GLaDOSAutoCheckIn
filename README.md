@@ -97,13 +97,16 @@ Requires=network.target
 
 [Service]
 Type=notify
-ExecStart=/opt/GLaDOSAuthCheckIn/GLaDOSAuthCheckIn
+WorkingDirectory==/opt/GLaDOSAutoCheckIn/
+ExecStart=/opt/GLaDOSAutoCheckIn/GLaDOSAutoCheckIn.Worker
 ```
+
+> 可以在 `ExecStart` 后加入命令行参数
 
 将该文件复制到 `/etc/systemd/system/` 目录下，执行
 
 ```sh
-sudo systemctl daemon-reload
+systemctl daemon-reload
 ```
 
 使用 
@@ -112,51 +115,13 @@ sudo systemctl daemon-reload
 systemctl start GLaDOSCheck.service
 ```
 
-完成单次签到
-
-##### 添加定时器
-
-新建 `GLaDOSAuto.timer` 写入以下内容：
-
-```service
-[Unit]
-Description=GLaDOS auto check-in timer
-
-[Timer]
-OnUnitActiveSec=24h
-Unit=GLaDOSCheck.service
-
-[Install]
-WantedBy=multi-user.target
-```
-
-将该文件复制到 `/etc/systemd/system/` 目录下，执行
-
-```sh
-sudo systemctl daemon-reload
-```
-
-使用 
-
-```sh
-systemctl enable GLaDOSAuto.timer
-```
-
-开机自动启动定时器
-
-使用
-
-```sh
-systemctl start GLaDOSAuto.timer
-```
-
-启动定时器
+启动自动签到，其中内置的定时器每5s检查一次，每天0时之后签到
 
 ## TODOs
 
 1. 测试自动解析POP服务器
 2. 存储cookie
-3. 视情况看是否内置定时器，而整个程序作为一个常驻的daeom运行
+~~3. 视情况看是否内置定时器，而整个程序作为一个常驻的daeom运行~~
 
 ## License
 
