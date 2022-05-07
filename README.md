@@ -77,6 +77,8 @@ dotnet publish -c Release
 
 > 建议，使用配置文件配置 `RequestOption` ，命令行配置邮箱密码等
 
+> 当然，你也可以使用 [Secret Manager](https://docs.microsoft.com/en-us/aspnet/core/security/app-secrets?view=aspnetcore-6.0&tabs=windows) 来存储密码等机密信息
+
 ### 使用
 
 配置完成后，运行 GLaDOSAutoCheckIn 则会自动完成验证、登录和签到

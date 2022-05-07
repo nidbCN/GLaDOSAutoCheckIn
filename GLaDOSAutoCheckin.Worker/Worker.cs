@@ -15,6 +15,7 @@ public class Worker : BackgroundService
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         await _userService.RequireVerifyAsync();
+        _mailService.Initialize();
 
         for (var i = 0; i < 3; i++)
         {
