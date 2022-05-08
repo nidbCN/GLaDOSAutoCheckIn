@@ -6,5 +6,5 @@ public interface IMailService
 {
     public void Initialize();
 
-    public bool TryGetAuthMail(out MimeMessage mailObj);
+    public bool TryGetAuthMail(Predicate<MimeMessage?> match, out MimeMessage mailObj);
 }

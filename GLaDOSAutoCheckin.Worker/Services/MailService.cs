@@ -37,18 +37,20 @@ public class MailService : IMailService
     public void Initialize()
     {
         _logger.LogInformation("Connecting to mail host.");
+        _logger.LogDebug("Use config: {host}:{port}, ssl:{ssl}",
+            _option.MailHost, _option.MailPort, _option.UseSSL);
         _mailClient.Connect(
             _option.MailHost,
             _option.MailPort,
             _option.UseSSL
-                ? SecureSocketOptions.SslOnConnect 
+                ? SecureSocketOptions.SslOnConnect
                 : SecureSocketOptions.None
         );
 
         _mailClient.Authenticate(_option.MailAccount, _option.Password);
     }
 
-    public bool TryGetAuthMail(out MimeMessage mailObj)
+    public bool TryGetAuthMail(Predicate<MimeMessage?> match, out MimeMessage mailObj)
     {
         mailObj = new MimeMessage();
 
@@ -59,7 +61,8 @@ public class MailService : IMailService
         {
             var mailItem = _mailClient.GetMessage(i);
 
-            if (mailItem?.Subject != "GLaDOS Authentication") continue;
+            if (!match(mailItem))
+                continue;
 
             _logger.LogInformation("Found auth mail, subject {title}", mailItem.Subject);
             mailObj = mailItem;
