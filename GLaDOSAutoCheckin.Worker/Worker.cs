@@ -14,13 +14,17 @@ public class Worker : BackgroundService
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
+        var requestTime = new DateTimeOffset(DateTime.Now);
         await _userService.RequireVerifyAsync();
         _mailService.Initialize();
 
         for (var i = 0; i < 3; i++)
         {
             _logger.LogInformation("Try get auth from mail, times {times}", i);
-            if (_mailService.TryGetAuthMail(out var mail))
+            if (_mailService.TryGetAuthMail(mailItem
+                        => mailItem?.Subject == "GLaDOS Authentication"
+                            && mailItem.Date > requestTime,
+                    out var mail))
             {
                 if (!AuthCodeUtil.TryParseFromHtml(mail.HtmlBody, out var code))
                 {
@@ -34,21 +38,21 @@ public class Worker : BackgroundService
                 var startTime = DateTime.Now;
                 await _userService.CheckIn();
 
-                while (!stoppingToken.IsCancellationRequested)
+                while (true)
                 {
+                    if (stoppingToken.IsCancellationRequested)
+                        return;
 
                     if (DateTime.Now.Day - startTime.Day >= 1)
                     {
                         await _userService.CheckIn();
                     }
-                    Thread.Sleep(100);
+                    Thread.Sleep(1000);
                 }
             }
-            else
-            {
-                _logger.LogWarning("Could not found auth mail, retry in 5s.");
-                Thread.Sleep(5000);
-            }
+
+            _logger.LogWarning("Could not found auth mail, retry in 5s.");
+            Thread.Sleep(5000);
         }
 
         _logger.LogError("Could not found auth mail after 3 times fetch, exit.");
