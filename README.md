@@ -121,9 +121,10 @@ systemctl start GLaDOSCheck.service
 
 ## TODOs
 
-1. 测试自动解析POP服务器
+1. 测试自动解析 IMAP 服务器
 2. 存储cookie
-~~3. 视情况看是否内置定时器，而整个程序作为一个常驻的daeom运行~~
+3. 可配置的签到token
+~~4. 视情况看是否内置定时器，而整个程序作为一个常驻的daeom运行~~
 
 ## License
 
