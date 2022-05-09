@@ -49,22 +49,21 @@ public class UserConsoleService : IUserConsoleService
         var resp = await _httpClient.PostAsync("user/checkin",
             JsonContent.Create(new
             {
-                token = "glados_network"
+                token = "glados.network"
             }));
 
         resp.EnsureSuccessStatusCode();
 
-        var result = JsonSerializer.Deserialize<CheckInResponse>(
-            await resp.Content.ReadAsStringAsync());
+        var result = await resp.Content.ReadFromJsonAsync<CheckInResponse>();
 
         if (result is null || result.Code != 0)
         {
             // failed
-            _logger.LogError("Error occurred during check-in, message {msg}", result?.Message);
+            _logger.LogError("Error occurred during check-in, message: {msg}", result?.Message);
             return;
         }
 
-        _logger.LogInformation("CheckIn success, message {msg}", result.Message);
+        _logger.LogInformation("CheckIn success, message: {msg}", result.Message);
     }
 
     public Task GetStatus()

@@ -51,7 +51,7 @@ dotnet publish -c Release
     "MailAccount": "mail@example.com",
     "Password": "yourPassword",
     "MailPort": 143,
-    "MailHost": "pop3.example.com",
+    "MailHost": "imap.example.com",
     "UseSsl": false
   },
   "RequestOption": {
@@ -64,9 +64,11 @@ dotnet publish -c Release
 
 注释：
 1. `Logging` 节点为 `Microsoft Logger` 的配置，参考 [Microsoft Docs](https://docs.microsoft.com/en-us/dotnet/core/extensions/logging?tabs=command-line#configure-logging)
-2. `AuthOption` 为收邮件和登录的配置，`MailAccount` 为登录所用的邮箱；`Password` 为邮箱的密码（用于拉取邮件获取验证码）；`MailPort` 为 POP3 的端口，默认为 `143`，如果需要使用 SSL（见下文）请修改为对应端口（协议默认端口为 `995`）；`MailHost` 为邮件服务器，为空则自动解析；`UseSsl' 设置为 `true` 则使用 SSL 登录，需要手动指定端口为 `995`。
+2. `AuthOption` 为收邮件和登录的配置，`MailAccount` 为登录所用的邮箱；`Password` 为邮箱的密码（用于拉取邮件获取验证码）；`MailPort` 为 IMAP 的端口，默认为 `143`，如果需要使用 SSL（见下文）请修改为对应端口（协议默认端口为 `993`）；`MailHost` 为邮件服务器，为空则自动解析；`UseSsl` 设置为 `true` 则使用 SSL 登录，需要手动指定端口为 `993`。
 3. `HttpOption` 节点为发送请求的配置，`UserAgent` 为用户UA，建议模仿浏览器；`BaseUrl` 是 GLaDOS 的 API 链接；`Cookie` 暂时无法设置。
- 
+
+> 注：POP3协议不受支持
+
 #### 命令行参数
 
 ```sh

@@ -60,25 +60,31 @@ public class MailService : IMailService
     {
         mailObj = null;
 
-        var mailUidList = _mailClient.Inbox.Search(SearchQuery.NotAnswered
-            .And(SearchQuery.DeliveredAfter(startTime))
-            .And(SearchQuery.FromContains(FromText))
-            .And(SearchQuery.SubjectContains(TitleText))
-        );
+        var mailUidList = _mailClient.Inbox.Search(SearchQuery.DeliveredAfter(startTime));
 
-        var mailUid = mailUidList.LastOrDefault(uid =>
+        var mailUid = new UniqueId();
+
+        for (var i = mailUidList.Count - 1; i >= 0; i--)
         {
+            var uid = mailUidList[i];
             var headerList = _mailClient.Inbox.GetHeaders(uid);
+            if (headerList["Subject"] != TitleText)
+                continue;
+            if (headerList["From"] != FromText)
+                continue;
+
             var date = headerList["Date"];
-            
+
             if (date is null)
-                return false;
-
+                continue;
             if (!DateTime.TryParse(date, out var mailTime))
-                return false;
+                continue;
+            if (startTime > mailTime)
+                continue;
 
-            return startTime < mailTime;
-        });
+            mailUid = uid;
+            break;
+        }
 
         if (!mailUid.IsValid)
             return false;
