@@ -1,6 +1,9 @@
 ﻿using DnsClient;
 using GLaDOSAutoCheckIn.Models.Options;
+using MailKit;
+using MailKit.Net.Imap;
 using MailKit.Net.Pop3;
+using MailKit.Search;
 using MailKit.Security;
 using Microsoft.Extensions.Options;
 using MimeKit;
@@ -9,9 +12,12 @@ namespace GLaDOSAutoCheckIn.Worker.Services;
 
 public class MailService : IMailService
 {
+    private const string FromText = "support@glados.network";
+    private const string TitleText = "GLaDOS Authentication";
+
     private readonly AuthOption _option;
 
-    private readonly Pop3Client _mailClient = new();
+    private readonly ImapClient _mailClient = new();
 
     private readonly ILogger<MailService> _logger;
 
@@ -38,37 +44,48 @@ public class MailService : IMailService
     {
         _logger.LogInformation("Connecting to mail host.");
         _logger.LogDebug("Use config: {host}:{port}, ssl:{ssl}",
-            _option.MailHost, _option.MailPort, _option.UseSSL);
+            _option.MailHost, _option.MailPort, _option.UseSsl);
         _mailClient.Connect(
             _option.MailHost,
             _option.MailPort,
-            _option.UseSSL
+            _option.UseSsl
                 ? SecureSocketOptions.SslOnConnect
-                : SecureSocketOptions.None
-        );
+                : SecureSocketOptions.None);
 
         _mailClient.Authenticate(_option.MailAccount, _option.Password);
+        _mailClient.Inbox.Open(FolderAccess.ReadOnly);
     }
 
-    public bool TryGetAuthMail(Predicate<MimeMessage?> match, out MimeMessage mailObj)
+    public bool TryGetAuthMail(DateTime startTime, out MimeMessage? mailObj)
     {
-        mailObj = new MimeMessage();
+        mailObj = null;
 
-        if (_mailClient.Count == 0)
-            return false;
+        var mailUidList = _mailClient.Inbox.Search(SearchQuery.NotAnswered
+            .And(SearchQuery.DeliveredAfter(startTime))
+            .And(SearchQuery.FromContains(FromText))
+            .And(SearchQuery.SubjectContains(TitleText))
+        );
 
-        for (var i = _mailClient.Count - 1; i >= 0; i--)
+        var mailUid = mailUidList.LastOrDefault(uid =>
         {
-            var mailItem = _mailClient.GetMessage(i);
+            var headerList = _mailClient.Inbox.GetHeaders(uid);
+            var date = headerList["Date"];
+            
+            if (date is null)
+                return false;
 
-            if (!match(mailItem))
-                continue;
+            if (!DateTime.TryParse(date, out var mailTime))
+                return false;
 
-            _logger.LogInformation("Found auth mail, subject {title}", mailItem.Subject);
-            mailObj = mailItem;
-            return true;
-        }
+            return startTime < mailTime;
+        });
 
-        return false;
+        if (!mailUid.IsValid)
+            return false;
+                
+        _logger.LogInformation("Found auth mail, uid {uid}", mailUid);
+        mailObj = _mailClient.Inbox.GetMessage(mailUid);
+
+        return true;
     }
 }

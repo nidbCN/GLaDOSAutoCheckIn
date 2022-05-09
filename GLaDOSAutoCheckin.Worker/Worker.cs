@@ -5,6 +5,8 @@ namespace GLaDOSAutoCheckIn.Worker;
 
 public class Worker : BackgroundService
 {
+    private const uint RetryTimes = 10;
+
     private readonly IUserConsoleService _userService;
     private readonly IMailService _mailService;
     private readonly ILogger<Worker> _logger;
@@ -14,25 +16,23 @@ public class Worker : BackgroundService
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        var requestTime = new DateTimeOffset(DateTime.Now);
+        var requestTime = DateTime.Now;
         await _userService.RequireVerifyAsync();
         _mailService.Initialize();
 
-        for (var i = 0; i < 3; i++)
+        for (var i = 0; i < RetryTimes; i++)
         {
             _logger.LogInformation("Try get auth from mail, times {times}", i);
-            if (_mailService.TryGetAuthMail(mailItem
-                        => mailItem?.Subject == "GLaDOS Authentication"
-                            && mailItem.Date > requestTime,
-                    out var mail))
+            if (_mailService.TryGetAuthMail(requestTime, out var mail))
             {
-                if (!AuthCodeUtil.TryParseFromHtml(mail.HtmlBody, out var code))
+                if (!AuthCodeUtil.TryParseFromHtml(mail!.HtmlBody, out var code))
                 {
                     _logger.LogError("An error occurred while parse code from mail, exit.");
                     return;
                 }
 
-                _logger.LogInformation("Successful read code {sCode}", $"****{code[^2..]}");
+                _logger.LogInformation("Successful read code {sCode}",
+                    code[^2..].PadLeft(code.Length-2, '*'));
                 await _userService.LoginAsync(code);
 
                 var startTime = DateTime.Now;
