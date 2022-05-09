@@ -11,5 +11,5 @@ public class AuthOption
 #nullable restore
 
     public string? MailHost { get; set; }
-    public bool UseSSL { get; set; } = false;
+    public bool UseSsl { get; set; } = false;
 }
